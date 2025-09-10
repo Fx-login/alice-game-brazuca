@@ -1,0 +1,382 @@
+html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alice - Mini Jogo Brazuca</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Georgia', serif;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 3em;
+            color: #4a4a4a;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-area {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .story-text {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .choices {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .alice-sprite {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .restart-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🇧🇷 Alice na Terra das Maravilhas Brazuca 🇧🇷</h1>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Curiosidade</div>
+                <div class="stat-value" id="curiosity">100</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Pique</div>
+                <div class="stat-value" id="energy">100</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Rolês</div>
+                <div class="stat-value" id="adventures">0</div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="alice-sprite">👧🏻</div>
+            <div class="story-text" id="story-text">
+                Ó o que rola! A Alice caiu no buraco do coelho e se ligou numa sala super estranha com várias portas. 
+                Numa mesinha tinha uma chave dourada massa e uma poção escrito "BEBE AÍ". 
+                E aí, o que a Alice vai fazer nessa parada?
+            </div>
+            
+            <div class="choices" id="choices">
+                <button class="choice-btn" onclick="makeChoice(1)">
+                    🗝️ Pegar logo a chave, né mano
+                </button>
+                <button class="choice-btn" onclick="makeChoice(2)">
+                    🧪 Tomar a poção de primeira
+                </button>
+                <button class="choice-btn" onclick="makeChoice(3)">
+                    🚪 Partir pra cima de uma porta qualquer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            curiosity: 100,
+            energy: 100,
+            adventures: 0,
+            currentScene: 0
+        };
+
+        const scenes = [
+            {
+                text: "Ó o que rola! A Alice caiu no buraco do coelho e se ligou numa sala super estranha com várias portas. Numa mesinha tinha uma chave dourada massa e uma poção escrito 'BEBE AÍ'. E aí, o que a Alice vai fazer nessa parada?",
+                choices: [
+                    { text: "🗝️ Pegar logo a chave, né mano", next: 1, curiosity: 10, energy: -5 },
+                    { text: "🧪 Tomar a poção de primeira", next: 2, curiosity: 20, energy: -10 },
+                    { text: "🚪 Partir pra cima de uma porta qualquer", next: 3, curiosity: 5, energy: -15 }
+                ]
+            },
+            {
+                text: "Boa pedida! A Alice pegou a chave dourada que tava brilhando da hora! Agora ela pode abrir aquela portinha pequena que vai pro jardim das maravilhas. Mas ó o vacilo: ela tá muito grandona pra passar...",
+                choices: [
+                    { text: "🧪 Agora sim, beber a poção pra ficar pequena", next: 4, curiosity: 15, energy: -10 },
+                    { text: "🔍 Dar um rolê e achar outra parada", next: 5, curiosity: 25, energy: -20 },
+                    { text: "🏃‍♀️ Tentar se esgueirar pela porta mesmo", next: 6, curiosity: -10, energy: -30 }
+                ]
+            },
+            {
+                text: "Eita! A Alice bebeu a poção e ficou minúscula! Só que agora deu ruim: ela tá pequena demais e a chave ficou lá em cima na mesa. Que perrengue danado!",
+                choices: [
+                    { text: "🧗‍♀️ Tentar escalar a mesa tipo uma ninja", next: 7, curiosity: 10, energy: -25 },
+                    { text: "😢 Chorar e fazer birra", next: 8, curiosity: -20, energy: -5 },
+                    { text: "🔍 Catar outra chave por aí", next: 9, curiosity: 20, energy: -15 }
+                ]
+            },
+            {
+                text: "A Alice foi tentar abrir uma porta no peito e no gogó, mas tava trancada! Dá pra escutar umas vozes loucas do outro lado... Será que é o Chapeleiro Maluco fazendo a festa?",
+                choices: [
+                    { text: "🎩 Bater na porta e mandar um 'E aí galera!'", next: 10, curiosity: 30, energy: -10 },
+                    { text: "👂 Ficar de moita escutando a conversa", next: 11, curiosity: 15, energy: -5 },
+                    { text: "🏃‍♀️ Vazar correndo que nem doida", next: 12, curiosity: -15, energy: -20 }
+                ]
+            },
+            {
+                text: "Massa demais! A Alice encolheu na medida certa e conseguiu passar pela portinha. Se ligou no jardim mais show que já viu na vida, com rosas pintadas e cartas de baralho andando por aí numa boa!",
+                choices: [
+                    { text: "🌹 Chegar junto pra ajudar a pintar as rosas", next: 13, curiosity: 20, energy: -10 },
+                    { text: "🃏 Trocar uma ideia com as cartas", next: 14, curiosity: 25, energy: -15 },
+                    { text: "👑 Partir pra cima da Rainha de Copas", next: 15, curiosity: 15, energy: -20 }
+                ]
+            },
+            {
+                text: "Que achado da hora! A Alice encontrou um bolo escrito 'COME AÍ MANÉ'. Esperta como ela só, pensou que talvez isso faça ela crescer de novo.",
+                choices: [
+                    { text: "🍰 Devorar o bolo inteiro sem dó", next: 16, curiosity: 10, energy: 20 },
+                    { text: "🤏 Dar só uma mordidinha básica", next: 17, curiosity: 20, energy: 10 },
+                    { text: "💭 Parar pra pensar melhor nessa jogada", next: 5, curiosity: 30, energy: -5 }
+                ]
+            },
+            {
+                text: "Eita preula! A Alice tentou se esgueirar e ficou enroscada na porta! Por sorte, apareceu um Coelho Branco pra dar uma força.",
+                choices: [
+                    { text: "🐰 Pedir um help pro coelhinho", next: 18, curiosity: 15, energy: -10 },
+                    { text: "💪 Tentar se desenroscar sozinha", next: 19, curiosity: 5, energy: -25 },
+                    { text: "🎭 Fingir que tá tudo de boa", next: 20, curiosity: -5, energy: -15 }
+                ]
+            },
+            {
+                text: "Show de bola! A Alice conseguiu escalar a mesa igual uma macaquinha e pegou a chave! Agora ela tem tudo pra abrir a porta pequena e partir pro jardim!",
+                choices: [
+                    { text: "🚪 Abrir logo a porta e meter o pé", next: 4, curiosity: 15, energy: -10 },
+                    { text: "🔍 Dar uma olhada se tem mais coisa interessante", next: 21, curiosity: 25, energy: -15 },
+                    { text: "🎉 Fazer uma dancinha de comemoração", next: 22, curiosity: 10, energy: -5 }
+                ]
+            },
+            {
+                text: "Ó o drama! A Alice começou a chorar e suas lágrimas formaram um lago gigante! Agora ela tá boiando numa piscina das próprias lágrimas com vários bichinhos esquisitos.",
+                choices: [
+                    { text: "🏊‍♀️ Dar umas braçadas e nadar pra longe", next: 23, curiosity: 15, energy: -20 },
+                    { text: "🗣️ Conversar com os bichinhos da água", next: 24, curiosity: 20, energy: -10 },
+                    { text: "😤 Parar de chorar e se concentrar", next: 25, curiosity: 10, energy: 10 }
+                ]
+            },
+            {
+                text: "Que rolê doido! A Alice achou outra chavinha escondida debaixo de um tapetinho. Essa aqui é bem pequena, perfeita pro seu tamanho atual!",
+                choices: [
+                    { text: "🔓 Testar a chave na porta pequena", next: 4, curiosity: 20, energy: -5 },
+                    { text: "🎒 Guardar a chave e continuar explorando", next: 26, curiosity: 15, energy: -10 },
+                    { text: "🤔 Ficar pensando se é uma armadilha", next: 27, curiosity: 25, energy: -15 }
+                ]
+            }
+        ];
+
+        const brazilianEndings = [
+            "A Alice virou a rainha das aventuras e agora comanda o rolê no País das Maravilhas! 👑🎉",
+            "Que massa! A Alice se tornou amigona do Gato de Cheshire e agora eles fazem dupla sertaneja! 😸🎤",
+            "Bora que bora! A Alice organizou um churrasco no jardim e todo mundo do País das Maravilhas apareceu! 🥩🎪",
+            "Eitaaaa! A Alice descobriu que o País das Maravilhas fica no interior do Brasil! Quem diria! 🌳🐆",
+            "Top demais! A Alice virou influencer do País das Maravilhas com milhões de seguidores! 📱✨",
+            "Sucesso total! A Alice abriu uma lanchonete de poções mágicas e tá fazendo a grana! 💰🧪"
+        ];
+
+        function updateStats() {
+            document.getElementById('curiosity').textContent = gameState.curiosity;
+            document.getElementById('energy').textContent = gameState.energy;
+            document.getElementById('adventures').textContent = gameState.adventures;
+        }
+
+        function makeChoice(choiceIndex) {
+            const currentScene = scenes[gameState.currentScene];
+            const choice = currentScene.choices[choiceIndex - 1];
+            
+            gameState.curiosity += choice.curiosity;
+            gameState.energy += choice.energy;
+            gameState.adventures += 1;
+            
+            gameState.curiosity = Math.max(0, Math.min(200, gameState.curiosity));
+            gameState.energy = Math.max(0, Math.min(200, gameState.energy));
+            
+            updateStats();
+            
+            if (gameState.energy <= 0) {
+                showGameOver("Ó o perrengue! A Alice ficou sem pique nenhum e cochilou no meio da aventura... Que mancada! 😴💤");
+                return;
+            }
+            
+            if (gameState.curiosity >= 150) {
+                const randomEnding = brazilianEndings[Math.floor(Math.random() * brazilianEndings.length)];
+                showGameOver(randomEnding);
+                return;
+            }
+            
+            if (gameState.adventures >= 10) {
+                showGameOver("Caramba! A Alice viveu tantos rolês que virou lenda no País das Maravilhas! Tá famosona! 🌟🎭");
+                return;
+            }
+            
+            if (choice.next && choice.next < scenes.length) {
+                gameState.currentScene = choice.next;
+                displayScene();
+            } else {
+                const randomEnding = brazilianEndings[Math.floor(Math.random() * brazilianEndings.length)];
+                showGameOver(randomEnding);
+            }
+        }
+
+        function displayScene() {
+            const scene = scenes[gameState.currentScene];
+            document.getElementById('story-text').textContent = scene.text;
+            
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            
+            scene.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                button.onclick = () => makeChoice(index + 1);
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        function showGameOver(message) {
+            const gameArea = document.querySelector('.game-area');
+            gameArea.innerHTML = `
+                <div class="game-over">
+                    <div class="alice-sprite">🎭✨🇧🇷</div>
+                    <h2>Fim da Jornada Brazuca!</h2>
+                    <p style="font-size: 1.2em; margin: 20px 0;">${message}</p>
+                    <p><strong>Rolês Vividos:</strong> ${gameState.adventures}</p>
+                    <p><strong>Curiosidade Final:</strong> ${gameState.curiosity}</p>
+                    <p><strong>Pique Final:</strong> ${gameState.energy}</p>
+                    <button class="restart-btn" onclick="restartGame()">
+                        🔄 Bora de Novo, Mané!
+                    </button>
+                </div>
+            `;
+        }
+
+        function restartGame() {
+            gameState = {
+                curiosity: 100,
+                energy: 100,
+                adventures: 0,
+                currentScene: 0
+            };
+            updateStats();
+            displayScene();
+        }
+
+        updateStats();
+        displayScene();
+    </script>
+</body>
+  </html>
